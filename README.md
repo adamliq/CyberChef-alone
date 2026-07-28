@@ -120,6 +120,21 @@ CyberChef is built to support
 CyberChef is built to fully support Node.js `v24`. For more information, see the ["Node API" wiki page](https://github.com/gchq/CyberChef/wiki/Node-API)
 
 
+## Standalone single-file build
+
+CyberChef can be packaged as a single, self-contained HTML file with no external dependencies, so it can be opened directly from disk (or emailed, copied to a USB stick, etc.) without needing a web server or an accompanying folder of assets.
+
+To build it:
+
+```bash
+npm run build-standalone
+```
+
+This produces `build/prod/CyberChef_v<version>_standalone.html`. Everything CyberChef needs - the app, its stylesheet, fonts, images and all operation modules - is embedded directly in that one file.
+
+**Known limitation:** the Optical Character Recognition operation depends on Tesseract's own worker, WASM core and per-language trained data files (around 16 MB), which aren't embedded due to their size and Tesseract's own asset-loading logic. That operation requires network access, or the build's `assets/tesseract` directory to be reachable alongside the file, to function.
+
+
 ## Security
 
 Please see the [CyberChef security policy](./SECURITY.md).

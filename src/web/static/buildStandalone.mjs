@@ -65,11 +65,11 @@ function stringifyForInlineScript(value) {
 }
 
 if (!fs.existsSync(prodDir)) {
-    console.error("build/prod not found. Run `grunt prod` first.");
+    console.error("build/prod not found. Run `grunt prod` first."); // eslint-disable-line no-console
     process.exit(1);
 }
 
-console.log("Reading production build...");
+console.log("Reading production build..."); // eslint-disable-line no-console
 
 let html = fs.readFileSync(path.join(prodDir, "index.html"), "utf8");
 let css = readProdFile("assets/main.css").toString("utf8");
@@ -105,7 +105,7 @@ if (fs.existsSync(imagesDir)) {
     }
 }
 
-console.log("Embedding lazily-loaded operation modules...");
+console.log("Embedding lazily-loaded operation modules..."); // eslint-disable-line no-console
 
 // Embed the source of every lazily-loaded operation module (Ciphers.js,
 // Crypto.js, Compression.js, etc.) so ChefWorker.js can request them from the
@@ -127,7 +127,7 @@ const standaloneAssetsScript = "<script>\n" +
     `window.CC_STANDALONE_ASSETS = { forgePrimeWorker: ${stringifyForInlineScript(forgePrimeWorkerSource)} };\n` +
     "</script>\n";
 
-console.log("Assembling single HTML file...");
+console.log("Assembling single HTML file..."); // eslint-disable-line no-console
 
 // Replace the external CSS link with an inline <style> block
 html = html.replace(
@@ -154,4 +154,4 @@ const outFile = path.join(prodDir, `CyberChef_v${pkg.version}_standalone.html`);
 fs.writeFileSync(outFile, html);
 
 const sizeMb = (fs.statSync(outFile).size / (1024 * 1024)).toFixed(1);
-console.log(`Written ${outFile} (${sizeMb} MiB)`);
+console.log(`Written ${outFile} (${sizeMb} MiB)`); // eslint-disable-line no-console
