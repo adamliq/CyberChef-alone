@@ -114,6 +114,19 @@ class WorkerWaiter {
         }
         newWorker.postMessage({"action": "docURL", "data": docURL});
 
+        // If running as a standalone single-file build, the worker cannot
+        // fetch additional modules or assets over the network, so let it
+        // know to request them from us instead, and give it anything it
+        // needs eagerly.
+        if (window.CC_STANDALONE_MODULES) {
+            newWorker.postMessage({"action": "standaloneMode", "data": true});
+        }
+        if (window.CC_STANDALONE_ASSETS && window.CC_STANDALONE_ASSETS.forgePrimeWorker) {
+            newWorker.postMessage({
+                "action": "forgePrimeWorkerSource",
+                "data": window.CC_STANDALONE_ASSETS.forgePrimeWorker
+            });
+        }
 
         // Store the worker, whether or not it's active, and the inputNum as an object
         const newWorkerObj = {
@@ -252,6 +265,20 @@ class WorkerWaiter {
             case "highlightsCalculated":
                 this.manager.highlighter.displayHighlights(r.data.pos, r.data.direction);
                 break;
+            case "requestModuleSource": {
+                // Only sent by ChefWorkers in a standalone single-file build,
+                // where modules are embedded in the page rather than
+                // available to fetch over the network.
+                const source = (window.CC_STANDALONE_MODULES && window.CC_STANDALONE_MODULES[r.data.module]) || "";
+                e.target.postMessage({
+                    action: "moduleSource",
+                    data: {
+                        requestId: r.data.requestId,
+                        source: source
+                    }
+                });
+                break;
+            }
             default:
                 log.error("Unrecognised message from ChefWorker", e);
                 break;

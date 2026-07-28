@@ -56,11 +56,20 @@ class GenerateRSAKeyPair extends Operation {
     async run(input, args) {
         const [keyLength, outputFormat] = args;
 
+        let workerScript = "assets/forge/prime.worker.min.js";
+        if (typeof self !== "undefined" && self.standaloneForgePrimeWorkerSource) {
+            // Running as a standalone single-file build - the worker script
+            // cannot be fetched over the network, so it has been embedded in
+            // the page and sent to us directly instead.
+            const blob = new Blob([self.standaloneForgePrimeWorkerSource], { type: "application/javascript" });
+            workerScript = URL.createObjectURL(blob);
+        }
+
         return new Promise((resolve, reject) => {
             forge.pki.rsa.generateKeyPair({
                 bits: Number(keyLength),
                 workers: -1,
-                workerScript: "assets/forge/prime.worker.min.js"
+                workerScript: workerScript
             }, (err, keypair) => {
                 if (err) return reject(err);
 

@@ -19,6 +19,11 @@ self.OpModules = OpModules;
 self.OperationConfig = OperationConfig;
 self.inputNum = -1;
 
+// Used only when running as a standalone single-file build (see
+// loadRequiredModules and the "standaloneMode" message case below)
+let moduleRequestId = 0;
+const pendingModuleRequests = {};
+
 
 // Tell the app that the worker has loaded and is ready to operate
 self.postMessage({
@@ -68,6 +73,27 @@ self.addEventListener("message", function(e) {
             // imported into an inline worker.
             self.docURL = r.data;
             break;
+        case "standaloneMode":
+            // Set when running as a self-contained single-file build, where
+            // additional modules and assets cannot be fetched over the
+            // network and must instead be requested from the main thread,
+            // which holds them embedded in the page.
+            self.standaloneMode = r.data;
+            break;
+        case "forgePrimeWorkerSource":
+            // The source of node-forge's prime-finding worker script, embedded
+            // in a standalone build, for use by GenerateRSAKeyPair.
+            self.standaloneForgePrimeWorkerSource = r.data;
+            break;
+        case "moduleSource":
+            // A response to a "requestModuleSource" message, providing the
+            // source code of a lazily-loaded operation module embedded in a
+            // standalone build.
+            if (pendingModuleRequests[r.data.requestId]) {
+                pendingModuleRequests[r.data.requestId](r.data.source);
+                delete pendingModuleRequests[r.data.requestId];
+            }
+            break;
         case "highlight":
             calculateHighlights(
                 r.data.recipeConfig,
@@ -97,7 +123,7 @@ self.addEventListener("message", function(e) {
  */
 async function bake(data) {
     // Ensure the relevant modules are loaded
-    self.loadRequiredModules(data.recipeConfig);
+    await self.loadRequiredModules(data.recipeConfig);
     try {
         self.inputNum = data.inputNum === undefined ? -1 : data.inputNum;
         const response = await self.chef.bake(
@@ -206,16 +232,46 @@ async function calculateHighlights(recipeConfig, direction, pos) {
  *
  * @param {Object} recipeConfig
  */
-self.loadRequiredModules = function(recipeConfig) {
-    recipeConfig.forEach(op => {
+self.loadRequiredModules = async function(recipeConfig) {
+    for (const op of recipeConfig) {
         const module = self.OperationConfig[op.op].module;
 
         if (!(module in OpModules)) {
             log.info(`Loading ${module} module`);
             self.sendStatusMessage(`Loading ${module} module`);
-            self.importScripts(`${self.docURL}/modules/${module}.js`); // lgtm [js/client-side-unvalidated-url-redirection]
+
+            if (self.standaloneMode) {
+                // Running as a standalone single-file build - modules are
+                // embedded in the page rather than available to fetch over
+                // the network, so request the source from the main thread.
+                const source = await self.requestModuleSource(module);
+                // eslint-disable-next-line no-eval
+                (0, eval)(source);
+            } else {
+                self.importScripts(`${self.docURL}/modules/${module}.js`); // lgtm [js/client-side-unvalidated-url-redirection]
+            }
+
             self.sendStatusMessage("");
         }
+    }
+};
+
+/**
+ * Requests a lazily-loaded module's source code from the main thread. Only
+ * used in standalone builds, where the module sources are embedded in the
+ * page instead of being fetched over the network.
+ *
+ * @param {string} module
+ * @returns {Promise<string>}
+ */
+self.requestModuleSource = function(module) {
+    return new Promise(resolve => {
+        const requestId = ++moduleRequestId;
+        pendingModuleRequests[requestId] = resolve;
+        self.postMessage({
+            action: "requestModuleSource",
+            data: { module, requestId }
+        });
     });
 };
 

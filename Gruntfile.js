@@ -38,6 +38,10 @@ module.exports = function (grunt) {
             "clean:node", "clean:config", "clean:nodeConfig", "exec:generateConfig", "exec:generateNodeIndex"
         ]);
 
+    grunt.registerTask("standalone",
+        "Creates a single, self-contained HTML file containing the whole app, with no external dependencies.",
+        ["prod", "exec:buildStandalone"]);
+
     grunt.registerTask("configTests",
         "A task which configures config files in preparation for tests to be run. Use `npm test` to run tests.",
         [
@@ -380,6 +384,10 @@ module.exports = function (grunt) {
                     `node ${nodeFlags} src/node/config/scripts/generateNodeIndex.mjs`,
                     "echo '--- Node index generated. ---\n'"
                 ]),
+                sync: true
+            },
+            buildStandalone: {
+                command: `node ${nodeFlags} src/web/static/buildStandalone.mjs`,
                 sync: true
             },
             browserTests: {
