@@ -50,6 +50,16 @@ class BackgroundWorkerWaiter {
             docURL = docURL.substring(0, index);
         }
         this.chefWorker.postMessage({"action": "docURL", "data": docURL});
+
+        if (window.CC_STANDALONE_MODULES) {
+            this.chefWorker.postMessage({"action": "standaloneMode", "data": true});
+        }
+        if (window.CC_STANDALONE_ASSETS && window.CC_STANDALONE_ASSETS.forgePrimeWorker) {
+            this.chefWorker.postMessage({
+                "action": "forgePrimeWorkerSource",
+                "data": window.CC_STANDALONE_ASSETS.forgePrimeWorker
+            });
+        }
     }
 
 
@@ -79,6 +89,20 @@ class BackgroundWorkerWaiter {
             case "progressMessage":
                 // Ignore these messages
                 break;
+            case "requestModuleSource": {
+                // Only sent by the ChefWorker in a standalone single-file
+                // build, where modules are embedded in the page rather than
+                // available to fetch over the network.
+                const source = (window.CC_STANDALONE_MODULES && window.CC_STANDALONE_MODULES[r.data.module]) || "";
+                e.target.postMessage({
+                    action: "moduleSource",
+                    data: {
+                        requestId: r.data.requestId,
+                        source: source
+                    }
+                });
+                break;
+            }
             default:
                 log.error("Unrecognised message from background ChefWorker", e);
                 break;
