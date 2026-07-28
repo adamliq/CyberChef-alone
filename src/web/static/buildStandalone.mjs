@@ -150,7 +150,10 @@ html = html.replace(
     `<span>Version ${pkg.version} (standalone)</span>`
 );
 
-const outFile = path.join(prodDir, `CyberChef_v${pkg.version}_standalone.html`);
+const distDir = path.join(rootDir, "dist");
+fs.mkdirSync(distDir, { recursive: true });
+
+const outFile = path.join(distDir, `CyberChef_v${pkg.version}_standalone.html`);
 fs.writeFileSync(outFile, html);
 
 const sizeMb = (fs.statSync(outFile).size / (1024 * 1024)).toFixed(1);
