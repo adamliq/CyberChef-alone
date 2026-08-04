@@ -158,3 +158,10 @@ fs.writeFileSync(outFile, html);
 
 const sizeMb = (fs.statSync(outFile).size / (1024 * 1024)).toFixed(1);
 console.log(`Written ${outFile} (${sizeMb} MiB)`); // eslint-disable-line no-console
+
+// Also drop a copy at the repository root as index.html, so the standalone
+// build is immediately visible/servable (e.g. via GitHub Pages) without
+// having to look in dist/.
+const rootIndexFile = path.join(rootDir, "index.html");
+fs.writeFileSync(rootIndexFile, html);
+console.log(`Written ${rootIndexFile} (${sizeMb} MiB)`); // eslint-disable-line no-console
