@@ -130,7 +130,7 @@ To build it:
 npm run build-standalone
 ```
 
-This produces `build/prod/CyberChef_v<version>_standalone.html`. Everything CyberChef needs - the app, its stylesheet, fonts, images and all operation modules - is embedded directly in that one file.
+This produces `dist/CyberChef_v<version>_standalone.html`, and also drops an identical copy at the repository root as `index.html` (so it's servable directly, e.g. via GitHub Pages, and easy to find). Everything CyberChef needs - the app, its stylesheet, fonts, images and all operation modules - is embedded directly in that one file. Pre-built copies are committed at both paths for convenience.
 
 **Known limitation:** the Optical Character Recognition operation depends on Tesseract's own worker, WASM core and per-language trained data files (around 16 MB), which aren't embedded due to their size and Tesseract's own asset-loading logic. That operation requires network access, or the build's `assets/tesseract` directory to be reachable alongside the file, to function.
 
