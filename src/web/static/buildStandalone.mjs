@@ -129,17 +129,27 @@ const standaloneAssetsScript = "<script>\n" +
 
 console.log("Assembling single HTML file..."); // eslint-disable-line no-console
 
-// Replace the external CSS link with an inline <style> block
+// Replace the external CSS link with an inline <style> block. The exact
+// attribute quoting/ordering here depends on the installed html-minifier
+// version, so match loosely rather than relying on an exact string.
+const cssLinkPattern = /<link\b[^>]*href=["']?assets\/main\.css["']?[^>]*>/;
+if (!cssLinkPattern.test(html)) {
+    throw new Error("Could not find the main.css <link> tag in index.html - has the build output format changed?");
+}
 html = html.replace(
-    /<link href="assets\/main\.css" rel="stylesheet">/,
+    cssLinkPattern,
     () => `<style>\n${css}\n</style>`
 );
 
 // Replace the external main.js script tag with the embedded modules/assets
 // script followed by the inlined main.js source
+const jsScriptPattern = /<script\b[^>]*src=["']?assets\/main\.js["']?[^>]*>\s*<\/script>/;
+if (!jsScriptPattern.test(html)) {
+    throw new Error("Could not find the main.js <script> tag in index.html - has the build output format changed?");
+}
 html = html.replace(
-    /<script defer="defer" src="assets\/main\.js"><\/script>/,
-    () => `${standaloneAssetsScript}<script defer="defer">\n${js}\n</script>`
+    jsScriptPattern,
+    () => `${standaloneAssetsScript}<script defer>\n${js}\n</script>`
 );
 
 // The downloadable ZIP file isn't included in the standalone build, so
@@ -152,6 +162,18 @@ html = html.replace(
 
 const distDir = path.join(rootDir, "dist");
 fs.mkdirSync(distDir, { recursive: true });
+
+// Sanity check: the assembled page should be roughly as large as main.js,
+// main.css and the embedded modules combined. A much smaller result almost
+// always means one of the inlining steps above silently failed to match
+// (e.g. after an html-minifier/Webpack upgrade changed attribute quoting).
+const expectedMinBytes = Buffer.byteLength(js) + Buffer.byteLength(css);
+if (Buffer.byteLength(html) < expectedMinBytes) {
+    throw new Error(
+        `Assembled HTML (${html.length} bytes) is smaller than main.js + main.css alone ` +
+        `(${expectedMinBytes} bytes) - inlining likely failed silently.`
+    );
+}
 
 const outFile = path.join(distDir, `CyberChef_v${pkg.version}_standalone.html`);
 fs.writeFileSync(outFile, html);
