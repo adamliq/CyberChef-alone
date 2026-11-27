@@ -58,20 +58,37 @@ checked `splunk-appinspect list checks` directly). The app's existing
 lazy-module-loading mechanism, which does use `eval()`, did not need to be
 reworked for this.
 
-## Still unverified - needs a real Splunk Cloud instance
+## Docker test (Splunk Enterprise)
 
-AppInspect only checks packaging/security *rules*; it doesn't render pages.
-The one real open question is whether Splunk Cloud's platform-enforced CSP
-(not customer-editable) allows this page - one huge inline `<script>`, no
-external resources - to actually execute when served from
-`appserver/static/` and opened via the nav link's
-`/static/app/cyberchef/CyberChef_standalone.html` URL. This needs testing
-on an actual Cloud trial/sandbox org; I have no way to verify it from here.
+Verified end-to-end against the official `splunk/splunk:latest` Docker image
+(mounted this app directly at `/opt/splunk/etc/apps/cyberchef`, logged in via
+a real headless-browser session, Chromium/Playwright):
 
-The nav-link syntax itself (`<a href="..." target="_blank" default="true">`)
-is based on Splunk Community reports, not official docs (docs.splunk.com
-blocks automated fetches) - also worth a quick manual check once a sandbox
-is available.
+- **The nav entry renders and resolves correctly.** Splunk rewrote our
+  `<a href="/static/app/cyberchef/CyberChef_standalone.html" target="_blank">`
+  into its cache-busted form (`/static/@<hash>/app/cyberchef/...`) and it
+  opened the file in a new tab, confirming the community-sourced nav syntax
+  is in fact correct and current.
+- **The page fully executes when served through Splunk**, not just from
+  `file://`: 551 operations rendered, and baking `MD5()` over `hello`
+  produced the correct hash - exercising the lazy-module-loader (`eval`)
+  and Blob-based Web Worker machinery end-to-end, not just a static render.
+- **No `Content-Security-Policy` header was present at all** on any
+  response (checked both raw HTTP headers and the browser's own CSP
+  violation reporting) - zero CSP violations.
+- A handful of unrelated 404s appeared (`structured_data_service`,
+  `dmc-conf/settings`, `federated_analytics`) - these are Splunk's own
+  backend calls for optional platform features not configured on this
+  bare test instance, unrelated to this app.
+
+**Caveat:** this is a generic Splunk Enterprise Docker image, not an actual
+Splunk Cloud tenant. Splunk Cloud sometimes adds a hosting-layer CSP in
+front of splunkd that a self-hosted image can't reproduce, so this result
+substantially de-risks the CSP concern without being 100%
+Cloud-specific proof. Worth a quick re-check (reload the page, open
+DevTools console, confirm no CSP errors) the first time this is actually
+installed on a Cloud org - but at this point that's a confirmation step,
+not an open design question.
 
 ## Not yet done
 
