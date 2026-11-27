@@ -19,15 +19,24 @@ cyberchef/
     └── appIconAlt.png / appIconAlt_2x.png  # same, for the Splunk bar app menu
 ```
 
+`cyberchef.spl` (the packaged, installable app) is committed alongside the
+source directory, so there's always a ready-to-upload artifact without
+having to build one first.
+
 ## Building / updating the package
 
 The app ships a *copy* of the repo's standalone build, since the two have
-different jobs. Regenerate it after any `npm run build-standalone`:
+different jobs. One command rebuilds the standalone HTML and repackages the
+app from it, including syncing `app.conf`'s version to `package.json` so it
+can't silently go stale on the next CyberChef release:
 
 ```bash
-cp index.html splunk-app/cyberchef/appserver/static/CyberChef_standalone.html
-cd splunk-app && tar -czf cyberchef.spl cyberchef
+npm run build-splunk-app
 ```
+
+That's `grunt standalone` (full lint + webpack build, a few minutes) followed
+by `splunk-app/build.mjs`. If `index.html` is already fresh and you only want
+to repackage, run `node splunk-app/build.mjs` directly instead.
 
 ## AppInspect results (Splunk Cloud vetting)
 
@@ -95,6 +104,4 @@ not an open design question.
 - Confirming the private-app install path/process for your specific Splunk
   Cloud org (self-service app install vs. a support ticket) - this is an
   account/org-specific question, not a code question.
-- Deciding whether to commit the built `cyberchef.spl` package here or treat
-  it as a release artifact built on demand (parallel to the `dist/index.html`
-  discussion for the main repo).
+- The quick DevTools-console re-check on an actual Cloud tenant, noted above.

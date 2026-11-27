@@ -216,6 +216,7 @@
     "start": "npx grunt dev",
     "build": "npx grunt prod",
     "build-standalone": "npx grunt standalone",
+    "build-splunk-app": "npx grunt splunk-app",
     "node": "npx grunt node",
     "repl": "node --no-warnings src/node/repl.mjs",
     "test": "npx grunt configTests && node --no-warnings --no-deprecation --openssl-legacy-provider tests/node/index.mjs && node --no-warnings --no-deprecation --openssl-legacy-provider --trace-uncaught tests/operations/index.mjs",

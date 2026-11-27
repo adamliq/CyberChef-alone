@@ -45,6 +45,10 @@ module.exports = function (grunt) {
         "Creates a single, self-contained HTML file containing the whole app, with no external dependencies.",
         ["prod", "exec:buildStandalone"]);
 
+    grunt.registerTask("splunk-app",
+        "Builds the standalone HTML file and packages it into the CyberChef Splunk app under splunk-app/.",
+        ["standalone", "exec:buildSplunkApp"]);
+
     grunt.registerTask("configTests",
         "A task which configures config files in preparation for tests to be run. Use `npm test` to run tests.",
         [
@@ -395,6 +399,10 @@ module.exports = function (grunt) {
             },
             buildStandalone: {
                 command: `node ${nodeFlags} src/web/static/buildStandalone.mjs`,
+                sync: true
+            },
+            buildSplunkApp: {
+                command: `node ${nodeFlags} splunk-app/build.mjs`,
                 sync: true
             },
             browserTests: {

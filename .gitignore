@@ -16,5 +16,4 @@ tests/operations/index.mjs
 tests/browser/output/*
 .node-version
 chrome
-splunk-app/*.spl
 
